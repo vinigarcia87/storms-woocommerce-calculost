@@ -2,13 +2,17 @@
 /**
  * Plugin Name: Storms WooCommerce Calculo ST
  * Plugin URI: https://github.com/vinigarcia87/storms-woocommerce-calculost
- * Description: Criação do calculo de imposto ST WooCommerce by Storms
- * Author: Vinicius Garcia
+ * Description: Criação do calculo de imposto ST no WooCommerce
+ * Author: Storms Websolutions - Vinicius Garcia
  * Author URI: http://storms.com.br/
- * Version: 1.0.0
+ * Version: 1.0
  * License: GPLv2 or later
- * Text Domain: storms_wc_calculost
- * Domain Path: languages/
+ *
+ * WC requires at least: 3.9.2
+ * WC tested up to: 3.9.2
+ *
+ * Text Domain: storms
+ * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,8 +28,11 @@ function storms_wc_calculost_install() {
 
 register_activation_hook( __FILE__, 'storms_wc_calculost_install' );
 
+if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 
-include __DIR__ . '/storms-wc-calculost-backend.php';
-include __DIR__ . '/storms-wc-calculost-products-additional-fields.php';
-include __DIR__ . '/storms-wc-calculost-frontend.php';
-include __DIR__ . '/storms-wc-calculost-formula.php';
+	include __DIR__ . '/storms-wc-calculost-backend.php';
+	include __DIR__ . '/storms-wc-calculost-products-additional-fields.php';
+	include __DIR__ . '/storms-wc-calculost-frontend.php';
+	include __DIR__ . '/storms-wc-calculost-formula.php';
+
+}

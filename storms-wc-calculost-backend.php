@@ -54,27 +54,35 @@ function storms_wc_calculost_billing_field( $new_fields ) {
             $new_fields['billing_tipo_compra'] = array(
                 'type'        => 'radio',
                 'label'       => __( 'Qual é o motivo da compra realizada?', 'storms' ),
-                'class'       => array( 'form-row-wide', 'storms-tipo-compra' ),
+                'class'       => array( 'form-check-inline' ),
+				'custom_attributes' => array(
+					'external_div_class' => 'storms-tipo-compra',
+				),
                 'clear'       => true,
                 'required'    => true, // No save nos vamos marcar como required, caso o usuario seja uma Pessoa Juridica
                 'default'	  => 'is_consumo',
                 'options'     => array(
                     'is_consumo' => 'Compra para CONSUMO',
                     'is_revenda' => 'Compra para REVENDA',
-                )
+                ),
+				'priority'	  => 28,
             );
 
             $new_fields['billing_is_contribuinte'] = array(
                 'type'        => 'radio',
                 'label'       => __( 'Contribuinte?', 'storms' ),
-                'class'       => array( 'form-row-wide', 'storms-is-contribuinte' ),
+                'class'       => array( 'form-check-inline' ),
+				'custom_attributes' => array(
+					'external_div_class' => 'storms-is-contribuinte',
+				),
                 'clear'       => true,
                 'required'    => true,
                 'default'	  => 'is_contribuinte',
                 'options'     => array(
                     'is_contribuinte'  => 'Contribuinte',
                     'not_contribuinte' => 'Não Contribuinte',
-                )
+                ),
+				'priority'	  => 29,
             );
         }
     }
@@ -89,29 +97,34 @@ add_filter( 'wcbcf_billing_fields', 'storms_wc_calculost_billing_field' );
  */
 function storms_wc_calculost_order_billing_fields() {
     $order = array(
-        "billing_first_name",
-        "billing_last_name",
-        "billing_persontype", 		// ecfb plugin
-        "billing_cpf", 				// ecfb plugin
-        "billing_rg", 				// ecfb plugin
-        "billing_company", 			// ecfb plugin
-        "billing_cnpj", 			// ecfb plugin
-        "billing_ie", 				// ecfb plugin
-        "billing_tipo_compra", 		// DexPeças plugin
-        "billing_is_contribuinte",	// DexPeças plugin
-        "billing_birthdate", 		// ecfb plugin
-        "billing_sex", 				// ecfb plugin
-        "billing_country",
-        "billing_postcode",
-        "billing_address_1",
-        "billing_number", 			// ecfb plugin
-        "billing_address_2",
-        "billing_neighborhood", 	// ecfb plugin
-        "billing_city",
-        "billing_state",
-        "billing_phone",
-        "billing_cellphone", 		// ecfb plugin
-        "billing_email",
+		"billing_first_name" 		=> 10,
+		"billing_last_name" 		=> 20,
+		"billing_email" 			=> 30,
+
+		"billing_phone" 			=> 40,
+		"billing_cellphone" 		=> 50,	// ecfb plugin
+		"billing_birthdate" 		=> 60,	// ecfb plugin
+		"billing_sex" 				=> 70,	// ecfb plugin
+
+		"billing_persontype" 		=> 80,	// ecfb plugin
+
+		"billing_cpf" 				=> 90,	// ecfb plugin
+		"billing_rg"				=> 100,	// ecfb plugin
+
+		"billing_company" 			=> 110,
+		"billing_cnpj" 				=> 120,	// ecfb plugin
+		"billing_ie" 				=> 130,	// ecfb plugin
+		"billing_tipo_compra" 		=> 140,	// storms plugin
+		"billing_is_contribuinte" 	=> 150,	// storms plugin
+
+		"billing_country" 			=> 160,
+		"billing_postcode" 			=> 170,
+		"billing_address_1" 		=> 180,
+		"billing_number" 			=> 190,	// ecfb plugin
+		"billing_address_2" 		=> 200,
+		"billing_neighborhood" 		=> 210,	// ecfb plugin
+		"billing_city" 				=> 220,
+		"billing_state" 			=> 230,
     );
 
     return $order;
@@ -125,13 +138,11 @@ function storms_wc_calculost_checkout_order_fields( $fields ) {
 
     $order = storms_wc_calculost_order_billing_fields();
 
-    $ordered_fields = [];
-    foreach( $order as $field ) {
-        if( isset( $fields["billing"][$field] ) ) {
-            $ordered_fields[$field] = $fields["billing"][$field];
+    foreach( $order as $field => $priority ) {
+		if( isset( $fields["billing"][$field] ) ) {
+			$fields["billing"][$field]['priority'] = $priority;
         }
     }
-    $fields["billing"] = $ordered_fields;
 
     return $fields;
 }
@@ -144,14 +155,12 @@ function storms_wc_calculost_address_to_edit( $address, $load_address ) {
 
     $order = storms_wc_calculost_order_billing_fields();
 
-    $ordered_fields = [];
     if( $load_address == 'billing' ) {
-        foreach ( $order as $field ) {
-            if ( isset( $address[$field] ) ) {
-                $ordered_fields[$field] = $address[$field];
+        foreach( $order as $field => $priority ) {
+            if( isset( $address[$field] ) ) {
+				$address[$field]['priority'] = $priority;
             }
         }
-        $address = $ordered_fields;
     }
 
     return $address;

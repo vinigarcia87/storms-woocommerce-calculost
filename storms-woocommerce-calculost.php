@@ -32,6 +32,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 	include __DIR__ . '/storms-wc-calculost-backend.php';
 	include __DIR__ . '/storms-wc-calculost-products-additional-fields.php';
+	include __DIR__ . '/storms-wc-calculost-billing-address-additional-fields.php';
 	include __DIR__ . '/storms-wc-calculost-frontend.php';
 	include __DIR__ . '/storms-wc-calculost-formula.php';
 

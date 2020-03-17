@@ -55,7 +55,8 @@ class Storms_WC_Calculo_ST_API extends \WC_REST_Controller
 	 * Carrega tabela de calculo da ST
 	 *
 	 * @param \WP_REST_Request $request Full details about the request.
-	 * @return \WP_Error|\WP_REST_Response
+	 * @return mixed|WP_REST_Response
+	 * @throws Exception
 	 */
 	public function set_tabela_calculo_st( $request ) {
 		global $wpdb;
@@ -123,7 +124,7 @@ class Storms_WC_Calculo_ST_API extends \WC_REST_Controller
 	 * @return \WP_Error|boolean
 	 */
 	public function set_tabela_calculo_st_permissions_check( $request ) {
-		if ( ! wc_rest_check_user_permissions( 'create' ) ) {
+		if ( ! wc_rest_check_user_permissions( 'read' ) ) {
 			return new \WP_Error( 'woocommerce_rest_cannot_create', __( 'Sorry, you are not allowed to create resources.', 'woocommerce' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 

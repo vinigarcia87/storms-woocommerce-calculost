@@ -108,6 +108,11 @@ function storms_wc_calculost_fomula( WC_Cart $cart ) {
 		$order_base_st = array(); // Array que vi guardar as Base ST calculadas para os produtos
 		$peso_total = WC()->cart->get_cart_contents_weight();
 
+		if( $peso_total == 0 ) {
+			$logger->alert( 'Erro Calculo ST: Os produtos informados no carrinho não possuem peso informado!', array( 'source' => 'storms-calculo-st' ) );
+			return false;
+		}
+
 		if( $tipo_imposto != '' ) {
 			foreach (WC()->cart->get_cart() as $item) {
 
@@ -117,6 +122,7 @@ function storms_wc_calculost_fomula( WC_Cart $cart ) {
 				$valor_produto = $item['line_total'];
 				$qtde_cart = $item['quantity'];
 				$valor_ipi = $product->get_meta( '_valor_ipi' );
+				$valor_ipi = ! empty( $valor_ipi ) ? $valor_ipi : 0;
 				$eh_importado = $product->get_meta( '_eh_importado' );
 				$nao_cobrar_st = $product->get_meta( '_nao_cobrar_st' );
 				$frete_rateado = ($valor_frete * ($product->get_weight() * $qtde_cart)) / $peso_total;

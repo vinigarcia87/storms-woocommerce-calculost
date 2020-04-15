@@ -39,13 +39,9 @@ jQuery( function( $ ) {
 			var person_type = $('#billing_persontype').val();
 			var ie = $( '#billing_ie' ).val().replace(/\.|-/g, '').toLowerCase();
 
-			if( person_type == 2 &&
-				ie != '' && $.isNumeric( ie ) &&
-				$( '#billing_tipo_compra_is_consumo' ).is( ':checked' ) ) {
+			if( person_type == 2 && ie != '' && $.isNumeric( ie ) && $( '#billing_tipo_compra_is_consumo' ).is( ':checked' ) ) {
 				$('.storms-is-contribuinte').show();
 			} else {
-				$( '#billing_is_contribuinte_is_contribuinte' ).attr( 'checked', true );
-				$( '#billing_is_contribuinte_not_contribuinte' ).attr( 'checked', true );
 				$('.storms-is-contribuinte').hide();
 			}
 		});
@@ -85,8 +81,6 @@ jQuery( function( $ ) {
 
 		// Pessoa Física
 		if ( '1' === current ) {
-			$( '#billing_tipo_compra_is_consumo, #billing_tipo_compra_is_revenda' ).attr('checked', false);
-
 			$( pessoa_fisica_fields ).show();
 		}
 

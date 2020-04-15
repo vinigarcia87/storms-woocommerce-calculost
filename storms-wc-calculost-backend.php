@@ -37,6 +37,7 @@ function storms_wc_calculost_billing_field( $new_fields ) {
                 'type'        => 'radio',
                 'label'       => __( 'Qual é o motivo da compra realizada?', 'storms' ),
                 'class'       => array( 'form-check-inline' ),
+				'label_class' => array( 'sr-only' ),
 				'custom_attributes' => array(
 					'external_div_class' => 'storms-tipo-compra',
 				),
@@ -54,6 +55,7 @@ function storms_wc_calculost_billing_field( $new_fields ) {
                 'type'        => 'radio',
                 'label'       => __( 'Contribuinte?', 'storms' ),
                 'class'       => array( 'form-check-inline' ),
+				'label_class' => array( 'sr-only' ),
 				'custom_attributes' => array(
 					'external_div_class' => 'storms-is-contribuinte',
 				),

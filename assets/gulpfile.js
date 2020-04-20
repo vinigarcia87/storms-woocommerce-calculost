@@ -10,6 +10,7 @@ var project 		= 'storms-wc-calculost',   	 // Project name, used for build zip.
 
 // Load plugins
 var gulp          = require('gulp'),
+	pipeline 	  = require('readable-stream').pipeline,
 	debug         = require('gulp-debug'),
 	notify        = require('gulp-notify'),
 
@@ -33,20 +34,22 @@ var getStamp = function() {
  * Scripts
  * Look at /js/src files and concatenate those files, send them to /js where we then minimize the concatenated file.
  */
-gulp.task('scripts', async function() {
-
-	gulp.src( [
-		'./js/src/**/*.js' // All our custom scripts
-	] )
-		//.pipe( debug() )
-		.pipe( gulp.dest( './js/' ) )
-		.pipe( sourcemaps.init() )
-		.pipe( rename({ suffix: '.min' } ) )
-		.pipe( uglify() )
-		.pipe( sourcemaps.write( './maps' ) )
-		.pipe( gulp.dest( './js/' ) )
-		.pipe( notify( { message: 'Scripts task complete', onLast: true } ) );
-});
+function scripts_source() {
+	return pipeline(
+		gulp.src( [
+			'./js/src/**/*.js' // All our custom scripts
+		] ),
+		//debug(),
+		gulp.dest( './js/' ),
+		sourcemaps.init(),
+		rename({ suffix: '.min' } ),
+		uglify(),
+		sourcemaps.write( './maps' ),
+		gulp.dest( './js/' ),
+		notify( { message: 'Source scripts task complete', onLast: true } )
+	);
+}
+gulp.task('scripts', gulp.parallel(scripts_source));
 
 // ==== TASKS ==== //
 
@@ -60,5 +63,5 @@ gulp.task('default', gulp.series(['scripts']));
 
 // Watch Task
 gulp.task('watch', gulp.series(['scripts'], function () {
-	gulp.watch('./js/src/**/*.js', ['scripts']);
+	gulp.watch('./js/src/**/*.js', gulp.series('scripts'));
 }));

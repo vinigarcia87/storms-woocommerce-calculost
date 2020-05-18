@@ -139,7 +139,7 @@ function storms_wc_calculost_checkout_order_fields( $fields ) {
 
     return $fields;
 }
-add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_order_fields' );
+add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_order_fields', 20 );
 
 /**
  * Reorder billing fields in WooCommerce Address To Edit
@@ -158,7 +158,7 @@ function storms_wc_calculost_address_to_edit( $address, $load_address ) {
 
     return $address;
 }
-add_filter( 'woocommerce_address_to_edit', 'storms_wc_calculost_address_to_edit', 10, 2 );
+add_filter( 'woocommerce_address_to_edit', 'storms_wc_calculost_address_to_edit', 20, 2 );
 
 /**
  * Grava, junto com o pedido, os dados usados para o calculo da ST, se houver

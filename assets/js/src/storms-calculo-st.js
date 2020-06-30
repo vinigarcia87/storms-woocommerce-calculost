@@ -37,9 +37,9 @@ jQuery( function( $ ) {
 
 		$( '#billing_tipo_compra_is_consumo, #billing_tipo_compra_is_revenda' ).on('change', function() {
 			var person_type = $('#billing_persontype').val();
-			var ie = $( '#billing_ie' ).val().replace(/\.|-/g, '').toLowerCase();
+			var ie = $( '#billing_ie' ).val().replace( /\D/g, '' ).toLowerCase();
 
-			if( person_type == 2 && ie != '' && $.isNumeric( ie ) && $( '#billing_tipo_compra_is_consumo' ).is( ':checked' ) ) {
+			if( person_type === '2' && ie !== '' && $.isNumeric( ie ) && $( '#billing_tipo_compra_is_consumo' ).is( ':checked' ) ) {
 				$('.storms-is-contribuinte').show();
 			} else {
 				$('.storms-is-contribuinte').hide();
@@ -88,8 +88,8 @@ jQuery( function( $ ) {
 		if ( '2' === current ) {
 			$( pessoa_juridica_fields ).show();
 
-			var ie = $( '#billing_ie' ).val().replace(/\.|-/g, '').toLowerCase();
-			if( ie != '' && $.isNumeric( ie ) ) {
+			var ie = $( '#billing_ie' ).val().replace( /\D/g, '' ).toLowerCase();
+			if( ie !== '' && $.isNumeric( ie ) ) {
 				$( tipo_compra_fields ).show();
 
 				// Se for uma compra para consumo, precisamos perguntar se o cliente eh contribuinte

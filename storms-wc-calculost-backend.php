@@ -374,3 +374,26 @@ function storms_wc_calculost_validate_custom_fields( $fields, $errors ) {
 	}
 }
 add_action( 'woocommerce_after_checkout_validation', 'storms_wc_calculost_validate_custom_fields', 10, 2 );
+
+/**
+ * Mostramos os campos adicionais do Calculo ST
+ * Nas informações do cliente, dentro do pedido no admin
+ *
+ * @param $order
+ */
+function storms_wc_calculost_admin_order_data_after_billing_address( $order ) {
+
+	// Get plugin settings.
+	$settings    = get_option( 'wcbcf_settings' );
+	$person_type = intval( $settings['person_type'] );
+
+	if( ( ( 2 === intval( $order->get_meta( '_billing_persontype' ) ) && 1 === $person_type ) || 3 === $person_type ) &&
+		( $order->get_meta( '_billing_ie' ) != '' && strtolower( $order->get_meta( '_billing_ie' ) ) != 'isento' ) ) {
+		echo '<strong>' . esc_html__( 'Tipo da Compra', 'storms' ) .': </strong>' . esc_html( $order->get_meta( '_billing_tipo_compra' ) == 'is_revenda' ? 'Revenda' : 'Consumo' ) . '<br>';
+
+		if( $order->get_meta( '_billing_tipo_compra' ) == 'is_consumo' ) {
+			echo '<strong>' . esc_html__('É Contribuinte?', 'storms') . ' </strong>' . esc_html($order->get_meta('_billing_is_contribuinte') == 'is_contribuinte' ? 'Sim' : 'Não') . '<br>';
+		}
+	}
+}
+add_action( 'woocommerce_admin_order_data_after_billing_address', 'storms_wc_calculost_admin_order_data_after_billing_address', 20 );

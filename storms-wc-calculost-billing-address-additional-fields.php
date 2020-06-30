@@ -55,10 +55,12 @@ function storms_dex_orders_response( $response, $order ) {
 			wc_add_order_item_meta( $item->get_id(), '_base_st', 0 );
 		}
 
-		foreach( $response->data['line_items'] as $k => $it ) {
-			if( $it['id'] == $key ) {
-				$response->data['line_items'][ $k ]['base_st'] = $base_st;
-				break;
+		if( isset( $response->data['line_items'] ) ) {
+			foreach ($response->data['line_items'] as $k => $it) {
+				if ($it['id'] == $key) {
+					$response->data['line_items'][$k]['base_st'] = $base_st;
+					break;
+				}
 			}
 		}
 	}

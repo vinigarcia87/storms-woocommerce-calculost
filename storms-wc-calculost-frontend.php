@@ -33,7 +33,7 @@ function storms_wc_calculost_enqueue_scripts() {
 		/**/
 
 		// Adicionamos o script do calculo da ST
-		wp_enqueue_script( 'storms_calculo_st', plugin_dir_url( __FILE__ ) . 'assets/js/storms-calculo-st' . ( ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? '' : '.min' ) . '.js', array('jquery'), '1.0.0', true );
+		wp_enqueue_script( 'storms_calculo_st', plugin_dir_url( __FILE__ ) . 'assets/js/storms-calculo-st' . ( ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min' ) . '.js', array('jquery'), '1.0.0', true );
 		wp_localize_script( 'storms_calculo_st', 'storms_calculo_st', array(
 			'ajax_url' 			=> admin_url( 'admin-ajax.php' ),
 			'ajax_nonce' 		=> wp_create_nonce( 'storms_calculo_st_address_form' ),

@@ -397,3 +397,30 @@ function storms_wc_calculost_admin_order_data_after_billing_address( $order ) {
 	}
 }
 add_action( 'woocommerce_admin_order_data_after_billing_address', 'storms_wc_calculost_admin_order_data_after_billing_address', 20 );
+
+/**
+ * Definimos os valores default para pessoa fisica e pessoa juridica isento
+ * pois nestes casos, os campos de tipo de compra e contribuinte nao abrem para seleçao
+ *
+ * - Pessoa Fisica - Tipo Venda: Consumo / Contribuinte
+ * - Pessoa Juridica Insc. Est. ISENTO - Tipo Venda: Consumo / Não Contribuinte
+ *
+ * @param $order
+ * @param $data
+ */
+function storms_wc_calculost_default_values_for_tipo_compra( $order, $data ) {
+
+	// Pessoa Fisica - Tipo Venda: Consumo / Contribuinte
+	if( '1' === $data['billing_persontype'] ) {
+		$order->update_meta_data( '_billing_tipo_compra', 'is_consumo' ); // is_consumo / is_revenda
+		$order->update_meta_data( '_billing_is_contribuinte', 'is_contribuinte' ); // is_contribuinte / not_contribuinte
+	}
+
+	// Pessoa Juridica Insc. Est. ISENTO - Tipo Venda: Consumo / Não Contribuinte
+	if( '2' === $data['billing_persontype'] && 'isento' === strtolower( $data['billing_ie'] ) ) {
+		$order->update_meta_data( '_billing_tipo_compra', 'is_consumo' ); // is_consumo / is_revenda
+		$order->update_meta_data( '_billing_is_contribuinte', 'not_contribuinte' ); // is_contribuinte / not_contribuinte
+	}
+
+}
+add_action( 'woocommerce_checkout_create_order', 'storms_wc_calculost_default_values_for_tipo_compra', 10, 2 );

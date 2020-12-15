@@ -45,8 +45,8 @@ function storms_wc_calculost_billing_field( $new_fields ) {
                 'required'    => true, // No save nos vamos marcar como required, caso o usuario seja uma Pessoa Juridica
                 'default'	  => 'is_consumo',
                 'options'     => array(
-                    'is_consumo' => 'Compra para CONSUMO',
                     'is_revenda' => 'Compra para REVENDA',
+					'is_consumo' => 'Compra para CONSUMO',
                 ),
 				'priority'	  => 28,
             );

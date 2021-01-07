@@ -188,8 +188,8 @@ function storms_wc_calculost_add_order_fee_meta( $item_id, $item, $order_id ) {
 	$estado_ecomm = WC()->countries->get_base_state();
 	$is_contribuinte = ( get_user_meta($user_id, 'billing_is_contribuinte', true) == 'is_contribuinte' );
 
-	// Normalizamos a Inscrição Estadual
-	$billing_ie = strtolower( trim( str_replace( '.', '', str_replace( '-', '', $billing_ie ) ) ) );
+	// Normalizamos a Inscrição Estadual - strip leading spaces, '.', '-' and '/'
+	$billing_ie = strtolower( trim( str_replace( '.', '', str_replace( '-', '', str_replace( '/', '', $billing_ie ) ) ) ) );
 
 	// Se a compra é para Pessoa Juridica, com Inscrição Estadual e para o mesmo estado do eComm, não cobramos o imposto
 	if( ( $person_type == 2 ) &&

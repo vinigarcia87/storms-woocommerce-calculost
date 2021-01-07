@@ -53,8 +53,8 @@ function storms_wc_calculost_fomula( WC_Cart $cart ) {
 	$billing_ie = $post_data['billing_ie'] ?? '';
 	$is_contribuinte = ( isset( $post_data['billing_is_contribuinte'] ) ) ? ( $post_data['billing_is_contribuinte'] == 'is_contribuinte' ) : false;
 
-	// Normalizamos a Inscrição Estadual
-	$billing_ie = strtolower( trim( str_replace( '.', '', str_replace( '-', '', $billing_ie ) ) ) );
+	// Normalizamos a Inscrição Estadual - strip leading spaces, '.', '-' and '/'
+	$billing_ie = strtolower( trim( str_replace( '.', '', str_replace( '-', '', str_replace( '/', '', $billing_ie ) ) ) ) );
 
 	$estado_ecomm = strtoupper( WC()->countries->get_base_state() );
 	$estado_cliente = strtoupper( WC()->customer->get_shipping_state() );

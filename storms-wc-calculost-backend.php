@@ -35,9 +35,9 @@ function storms_wc_calculost_billing_field( $new_fields ) {
 
             $new_fields['billing_tipo_compra'] = array(
                 'type'        => 'radio',
-                'label'       => __( 'Qual é o motivo da compra realizada?', 'storms' ),
+                'label'       => __( 'Qual o motivo da sua compra?', 'storms' ),
                 'class'       => array( 'form-check-inline' ),
-				'label_class' => array( 'sr-only' ),
+				'label_class' => array(), // array( 'sr-only' ),
 				'custom_attributes' => array(
 					'external_div_class' => 'storms-tipo-compra',
 				),
@@ -275,15 +275,25 @@ add_filter( 'wcbcf_disable_checkout_validation', 'storms_wc_calculost_wcbcf_disa
  * @return mixed
  */
 function storms_wc_calculost_checkout_fields_validation( $fields ) {
-	// Don't let WC validate the following fields, we gonna do this ourselves
-	unset( $fields['billing']['billing_persontype']['required'] );
-	unset( $fields['billing']['billing_cpf']['required'] );
-	unset( $fields['billing']['billing_cnpj']['required'] );
-	unset( $fields['billing']['billing_ie']['required'] );
-	unset( $fields['billing']['billing_company']['required'] );
-	unset( $fields['billing']['billing_tipo_compra']['required'] );
-	unset( $fields['billing']['billing_is_contribuinte']['required'] );
 
+	$billing_persontype = isset( $_POST['billing_persontype'] ) ? intval( $_POST['billing_persontype'] ) : 0;
+
+	// Don't let WC validate the following fields, we gonna do this ourselves
+	switch ( $billing_persontype ) {
+		// If customer is 'Pessoa Fisica', we won't validate 'Pessoa Juridica' Fields
+		case 1:
+			 unset( $fields['billing']['billing_persontype']['required'] );
+			 unset( $fields['billing']['billing_cnpj']['required'] );
+			 unset( $fields['billing']['billing_ie']['required'] );
+			 unset( $fields['billing']['billing_company']['required'] );
+			 unset( $fields['billing']['billing_tipo_compra']['required'] );
+			 unset( $fields['billing']['billing_is_contribuinte']['required'] );
+			break;
+		// If customer is 'Pessoa Juridica', we won't validate 'Pessoa Fisica' Fields
+		case 2:
+			unset( $fields['billing']['billing_cpf']['required'] );
+			break;
+	}
 	return $fields;
 }
 add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_fields_validation' );

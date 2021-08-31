@@ -124,48 +124,37 @@ function storms_wc_calculost_order_billing_fields() {
 }
 
 /**
- * Reorder billing fields in WooCommerce Checkout
+ * Reorder billing fields in WooCommerce Checkout and WooCommerce My Account Billing Form
  * @link : http://wordpress.stackexchange.com/a/127490/54025
  */
-function storms_wc_calculost_checkout_order_fields( $fields ) {
+function storms_wc_calculost_checkout_billing_order_fields( $fields ) {
 
     $order = storms_wc_calculost_order_billing_fields();
 
     foreach( $order as $field => $priority ) {
-		if( isset( $fields["billing"][$field] ) ) {
-			$fields["billing"][$field]['priority'] = $priority;
-        }
+		if( is_checkout() ) {
+			if( isset( $fields["billing"][$field] ) ) {
+				$fields["billing"][$field]['priority'] = $priority;
+			}
+		} elseif( is_account_page() ) {
+			if( isset( $fields[$field] ) ) {
+				$fields[$field]['priority'] = $priority;
+			}
+		}
     }
 
     return $fields;
 }
-add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_order_fields', 20 );
-
-/**
- * Reorder billing fields in WooCommerce Address To Edit
- */
-function storms_wc_calculost_address_to_edit( $address, $load_address ) {
-
-    $order = storms_wc_calculost_order_billing_fields();
-
-    if( $load_address == 'billing' ) {
-        foreach( $order as $field => $priority ) {
-            if( isset( $address[$field] ) ) {
-				$address[$field]['priority'] = $priority;
-            }
-        }
-    }
-
-    return $address;
-}
-add_filter( 'woocommerce_address_to_edit', 'storms_wc_calculost_address_to_edit', 20, 2 );
+add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_billing_order_fields', 20 );
+add_filter( 'woocommerce_billing_fields', 'storms_wc_calculost_checkout_billing_order_fields', 20 );
 
 /**
  * Grava, junto com o pedido, os dados usados para o calculo da ST, se houver
  *
- * @param int|bool Item ID or false
- * @param WC_Order_Item $item
- * @param int $order_id
+ * @param $item_id
+ * @param $item
+ * @param $order_id
+ * @throws Exception
  */
 function storms_wc_calculost_add_order_fee_meta( $item_id, $item, $order_id ) {
 	/** @var wpdb $wpdb */
@@ -274,116 +263,220 @@ add_filter( 'wcbcf_disable_checkout_validation', 'storms_wc_calculost_wcbcf_disa
  * @param $fields
  * @return mixed
  */
-function storms_wc_calculost_checkout_fields_validation( $fields ) {
+function storms_wc_calculost_checkout_billing_fields_validation( $fields ) {
 
 	$billing_persontype = isset( $_POST['billing_persontype'] ) ? intval( $_POST['billing_persontype'] ) : 0;
 
-	// Don't let WC validate the following fields, we gonna do this ourselves
-	switch ( $billing_persontype ) {
+	if( is_checkout() ) {
 		// If customer is 'Pessoa Fisica', we won't validate 'Pessoa Juridica' Fields
-		case 1:
-			 unset( $fields['billing']['billing_persontype']['required'] );
-			 unset( $fields['billing']['billing_cnpj']['required'] );
-			 unset( $fields['billing']['billing_ie']['required'] );
-			 unset( $fields['billing']['billing_company']['required'] );
-			 unset( $fields['billing']['billing_tipo_compra']['required'] );
-			 unset( $fields['billing']['billing_is_contribuinte']['required'] );
-			break;
+		unset( $fields['billing']['billing_persontype']['required'] );
+		unset( $fields['billing']['billing_cnpj']['required'] );
+		unset( $fields['billing']['billing_ie']['required'] );
+		unset( $fields['billing']['billing_company']['required'] );
+		unset( $fields['billing']['billing_tipo_compra']['required'] );
+		unset( $fields['billing']['billing_is_contribuinte']['required'] );
+
 		// If customer is 'Pessoa Juridica', we won't validate 'Pessoa Fisica' Fields
-		case 2:
-			unset( $fields['billing']['billing_cpf']['required'] );
-			break;
+		unset( $fields['billing']['billing_cpf']['required'] );
+		if( isset( $fields['billing']['billing_rg'] ) ) {
+			unset( $fields['billing']['billing_rg']['required'] );
+		}
+	} elseif( is_account_page() ) {
+		// If customer is 'Pessoa Fisica', we won't validate 'Pessoa Juridica' Fields
+		unset( $fields['billing_persontype']['required'] );
+		unset( $fields['billing_cnpj']['required'] );
+		unset( $fields['billing_ie']['required'] );
+		unset( $fields['billing_company']['required'] );
+		unset( $fields['billing_tipo_compra']['required'] );
+		unset( $fields['billing_is_contribuinte']['required'] );
+
+		// If customer is 'Pessoa Juridica', we won't validate 'Pessoa Fisica' Fields
+		unset( $fields['billing_cpf']['required'] );
+		if( isset( $fields['billing_rg'] ) ) {
+			unset( $fields['billing_rg']['required'] );
+		}
 	}
+
 	return $fields;
 }
-add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_fields_validation' );
+add_filter( 'woocommerce_checkout_fields', 'storms_wc_calculost_checkout_billing_fields_validation' );
 
 /**
- * Validamos os campos customizados do nosso plugin
+ * Validaçao dos campos customizados ao salvar o endereço do cliente na pagina de Checkout
  *
  * @param $fields
  * @param WP_Error $errors
  */
 function storms_wc_calculost_validate_custom_fields( $fields, $errors ) {
 
+	$errors_list = storms_validate_calculost_custom_fields( $fields );
+
+	foreach( $errors_list as $error ) {
+		$errors->add( $error['code'], $error['message'], $error['data'] );
+	}
+}
+add_action( 'woocommerce_after_checkout_validation', 'storms_wc_calculost_validate_custom_fields', 10, 2 );
+
+/**
+ * Validaçao dos campos customizados ao salvar o endereço do cliente na pagina de Minha Conta
+ *
+ * @param int         $user_id User ID being saved.
+ * @param string      $load_address Type of address e.g. billing or shipping.
+ * @param array       $address The address fields.
+ * @param WC_Customer $customer The customer object being saved. @since 3.6.0
+ */
+function dexpecas_woocommerce_after_save_address_validation( $user_id, $load_address, $address, $customer ) {
+
+	$billing_persontype = intval( $customer->get_meta( 'billing_persontype' ) );
+
+	$non_required_fields = [];
+	if( 1 === $billing_persontype ) {
+		// If customer is 'Pessoa Fisica', we won't validate 'Pessoa Juridica' Fields
+		$non_required_fields = [ 'billing_persontype', 'billing_cnpj', 'billing_ie', 'billing_company', 'billing_tipo_compra', 'billing_is_contribuinte' ];
+
+	} elseif( 2 === $billing_persontype ) {
+		// If customer is 'Pessoa Juridica', we won't validate 'Pessoa Fisica' Fields
+		$non_required_fields = [ 'billing_cpf' ];
+	}
+
+	$notice_errors = [];
+	$notices = wc_get_notices();
+	foreach( $notices['error'] as $notice ) {
+		if( ! in_array( $notice['data']['id'], $non_required_fields ) ) {
+			$notice_errors[] = $notice;
+		}
+	}
+	$notices['error'] = $notice_errors;
+	wc_set_notices( $notices );
+
+	// Aplicar a validaçao dos campos customizados
+	$fields = [
+		'billing_persontype'		=> $customer->get_meta( 'billing_persontype' ),
+
+		'billing_country' 			=> $customer->get_billing_country(),
+		'billing_cpf'     			=> $customer->get_meta( 'billing_cpf' ),
+		'billing_rg'				=> $customer->get_meta( 'billing_rg' ),
+
+		'billing_cnpj'				=> $customer->get_meta( 'billing_cnpj' ),
+		'billing_ie'				=> $customer->get_meta( 'billing_ie' ),
+		'billing_company'			=> $customer->get_billing_company(),
+		'billing_tipo_compra'		=> $customer->get_meta( 'billing_tipo_compra' ),
+		'billing_is_contribuinte'	=> $customer->get_meta( 'billing_is_contribuinte' ),
+	];
+
+	$errors_list = storms_validate_calculost_custom_fields( $fields );
+
+	foreach( $errors_list as $error ) {
+		wc_add_notice( $error['message'], $error['code'], $error['data'] );
+	}
+}
+add_action( 'woocommerce_after_save_address_validation', 'dexpecas_woocommerce_after_save_address_validation', 10, 4 );
+
+/**
+ * Validaçao dos campos customizados para o Calculo ST
+ *
+ * @param $fields
+ * @return array
+ */
+function storms_validate_calculost_custom_fields( $fields ) {
+	$errors = [];
+
+	$billing_persontype = intval( $fields['billing_persontype'] );
+
 	$settings           = get_option( 'wcbcf_settings' );
 	$person_type        = intval( $settings['person_type'] ); // 1: Pessoa Física e Pessoa Jurídica; 2: Pessoa Física apenas; 3: Pessoa Jurídica apenas;
 	$only_brazil        = isset( $settings['only_brazil'] ) ? true : false;
-	$billing_persontype = isset( $_POST['billing_persontype'] ) ? intval( $fields['billing_persontype'] ) : 0;
+
+	$field_labels = [
+		'billing_persontype'		=> __( 'Tipo de Pessoa', 'storms' ),
+
+		'billing_cpf'     			=> __( 'CPF', 'storms' ),
+		'billing_rg'				=> __( 'RG', 'storms' ),
+
+		'billing_cnpj'				=> __( 'CNPJ', 'storms' ),
+		'billing_ie'				=> __( 'Inscrição Estadual', 'storms' ), // __( 'State Registration', 'woocommerce-extra-checkout-fields-for-brazil' )
+		'billing_company'			=> __( 'Billing Company', 'woocommerce' ),
+		'billing_tipo_compra'		=> __( 'Motivo da compra', 'storms' ),
+		'billing_is_contribuinte'	=> __( 'Contribuinte', 'storms' ),
+	];
 
 	if ( $only_brazil && 'BR' !== $fields['billing_country'] || 0 === $person_type ) {
-		return;
+		return [];
 	}
 
 	if( 0 === $billing_persontype && 1 === $person_type ) {
 
 		$key = 'billing_persontype';
-		$field_label = __('Tipo de Pessoa', 'storms');
-		$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-		$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
+		$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_labels[$key] );
+		$errors[] = [
+			'code' 	  => 'required-field',
+			'message' => apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label),
+			'data'    => [ 'id' => $key ]
+		];
+
 	} else {
 
 		// If customer is 'Pessoa Fisica'
 		if( ( 1 === $person_type && 1 === $billing_persontype ) || 2 === $person_type ) {
 
-			// Field CPF is required
-			$key = 'billing_cpf';
-			$field_label = __('CPF', 'storms');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
-			} else if( isset( $settings['validate_cpf'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cpf( $fields[$key] ) ) {
-				$errors->add('validation', sprintf(__('%1$s não é um CPF válido.', 'storms'), '<strong>' . esc_html($field_label) . '</strong>'), array('id' => $key));
+			$required_fields = [ 'billing_cpf' ];
+
+			// RG can be not required
+			if( isset( $settings['rg'] ) ) {
+				$required_fields[] = 'billing_rg';
 			}
 
-			// Field RG is required
-			$key = 'billing_rg';
-			$field_label = __('RG', 'storms');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( isset( $settings['rg'] ) && '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
+			// Fields CPF and RG are required
+			foreach( $required_fields as $key ) {
+				$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_labels[$key] );
+				if( empty( $fields[$key] ) ) {
+					$errors[] = [
+						'code' 	  => 'required-field',
+						'message' => apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label),
+						'data'    => [ 'id' => $key ]
+					];
+				}
+			}
+
+			$key = 'billing_cpf';
+			if( ! empty( $fields[$key] ) && isset( $settings['validate_cpf'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cpf( $fields[$key] ) ) {
+				$errors[] = [
+					'code' 	  => 'validation',
+					'message' => sprintf(__('%1$s não é um CPF válido.', 'storms'), '<strong>' . esc_html($field_label) . '</strong>'),
+					'data'    => [ 'id' => $key ]
+				];
 			}
 		}
 		// If customer is 'Pessoa Juridica'
 		if( ( 1 === $person_type && 2 === $billing_persontype ) || 3 === $person_type ) {
 
 			// Fields CNPJ, IE, Company, Tipo Compra and Is Contribuinte are required
+			$required_fields = [ 'billing_cnpj', 'billing_ie', 'billing_company', 'billing_tipo_compra', 'billing_is_contribuinte' ];
+
+			foreach( $required_fields as $key ) {
+				$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_labels[$key] );
+				if( empty( $fields[$key] ) ) {
+					$errors[] = [
+						'code' 	  => 'required-field',
+						'message' => apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label),
+						'data'    => [ 'id' => $key ]
+					];
+				}
+			}
+
 			$key = 'billing_cnpj';
-			$field_label = __('CNPJ', 'storms');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
-			} else if( isset( $settings['validate_cnpj'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cnpj( wp_unslash( $_POST['billing_cnpj'] ) ) ) {
-				$errors->add('validation', sprintf(__('%1$s não é um CNPJ válido.', 'storms'), '<strong>' . esc_html($field_label) . '</strong>'), array('id' => $key));
-			}
-			$key = 'billing_ie';
-			$field_label = __('Inscrição Estadual', 'storms'); // __( 'State Registration', 'woocommerce-extra-checkout-fields-for-brazil' )
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
-			}
-			$key = 'billing_company';
-			$field_label = __('Billing Company', 'woocommerce');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
-			}
-			$key = 'billing_tipo_compra';
-			$field_label = __('Motivo da compra', 'storms');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
-			}
-			$key = 'billing_is_contribuinte';
-			$field_label = __('Contribuinte', 'storms');
-			$field_label = sprintf( _x( 'Billing %s', 'checkout-validation', 'woocommerce' ), $field_label );
-			if( '' === $fields[$key] ) {
-				$errors->add('required-field', apply_filters('woocommerce_checkout_required_field_notice', sprintf(__('%s is a required field.', 'woocommerce'), '<strong>' . esc_html($field_label) . '</strong>'), $field_label), array('id' => $key));
+			if( ! empty( $fields[$key] ) && isset( $settings['validate_cnpj'] ) && ! Extra_Checkout_Fields_For_Brazil_Formatting::is_cnpj( wp_unslash( $fields[$key] ) ) ) {
+				$errors[] = [
+					'code' 	  => 'validation',
+					'message' => sprintf(__('%1$s não é um CNPJ válido.', 'storms'), '<strong>' . esc_html($field_label) . '</strong>'),
+					'data'    => [ 'id' => $key ]
+				];
 			}
 		}
 	}
+
+	return $errors;
 }
-add_action( 'woocommerce_after_checkout_validation', 'storms_wc_calculost_validate_custom_fields', 10, 2 );
 
 /**
  * Mostramos os campos adicionais do Calculo ST
